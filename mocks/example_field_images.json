@@ -1,0 +1,98 @@
+{
+  "analysis_id": "VIS-20260220-001",
+  "analysis_date": "2026-02-20T14:00:00Z",
+  "field_id": "F001-UsinaGuarani-Piracicaba",
+  "image_source": "satellite_sentinel2",
+  "image_date": "2026-02-18T13:30:00Z",
+  "fields": [
+    {
+      "field_id": "F001",
+      "field_name": "Talhão Piracicaba Sul",
+      "area_ha": 130,
+      "crop": "sugarcane",
+      "harvest_number": 4,
+      "image_url": "https://example.com/images/F001_20260218.tif",
+      "analysis": {
+        "maturity_score": 0.78,
+        "maturity_level": "mature",
+        "harvest_recommendation": "ready_in_2_weeks",
+        "estimated_sugar_content_percent": 14.2,
+        "confidence": 0.92
+      },
+      "indices": {
+        "ndvi_avg": 0.65,
+        "ndvi_std": 0.12,
+        "red_edge_avg": 0.42,
+        "moisture_index": 0.58
+      },
+      "zones_analysis": [
+        {
+          "zone_id": "Z001",
+          "area_ha": 50.2,
+          "maturity_score": 0.65,
+          "maturity_level": "developing",
+          "ndvi_avg": 0.58,
+          "notes": "Zona com desenvolvimento atrasado, colher por último"
+        },
+        {
+          "zone_id": "Z002",
+          "area_ha": 79.8,
+          "maturity_score": 0.85,
+          "maturity_level": "optimal",
+          "ndvi_avg": 0.72,
+          "notes": "Zona ótima para colheita, priorizar"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "high",
+          "action": "schedule_harvest",
+          "timeframe": "14_days",
+          "reason": "Maturidade ótima detectada, açúcar em pico"
+        },
+        {
+          "priority": "medium",
+          "action": "monitor_zone",
+          "zone_id": "Z001",
+          "reason": "Zona atrasada, reavaliar em 1 semana"
+        }
+      ]
+    },
+    {
+      "field_id": "F002",
+      "field_name": "Talhão Piracicaba Norte",
+      "area_ha": 95,
+      "crop": "sugarcane",
+      "harvest_number": 2,
+      "image_url": "https://example.com/images/F002_20260218.tif",
+      "analysis": {
+        "maturity_score": 0.45,
+        "maturity_level": "developing",
+        "harvest_recommendation": "wait_60_days",
+        "estimated_sugar_content_percent": 10.8,
+        "confidence": 0.88
+      },
+      "indices": {
+        "ndvi_avg": 0.72,
+        "ndvi_std": 0.08,
+        "red_edge_avg": 0.38,
+        "moisture_index": 0.68
+      },
+      "recommendations": [
+        {
+          "priority": "low",
+          "action": "continue_monitoring",
+          "timeframe": "30_days",
+          "reason": "Ainda em desenvolvimento, aguardar maturação"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "total_fields_analyzed": 2,
+    "total_area_ha": 225,
+    "fields_ready_harvest": 1,
+    "fields_developing": 1,
+    "avg_confidence": 0.90
+  }
+}
