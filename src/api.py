@@ -2,8 +2,9 @@
 
 from datetime import datetime
 from typing import Optional
+import uuid
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Query
 from fastapi.responses import JSONResponse
 from PIL import Image
 
@@ -184,6 +185,141 @@ async def http_exception_handler(request, exc):
             "timestamp": datetime.utcnow().isoformat(),
         },
     )
+
+
+# ========================================
+# MOCK ENDPOINT FOR INTEGRATION TESTING
+# ========================================
+
+# Mock scenarios for testing Integration with Intelligence
+MOCK_SCENARIOS = {
+    "healthy": {
+        "crop_health": {
+            "status": "healthy",
+            "confidence": 0.92,
+            "ndvi": 0.82,
+            "description": "Crop shows healthy growth with good vigor"
+        },
+        "weeds": [],
+        "pests": [],
+        "diseases": []
+    },
+    "weeds": {
+        "crop_health": {
+            "status": "stressed",
+            "confidence": 0.87,
+            "ndvi": 0.55,
+            "description": "Crop under stress due to weed competition"
+        },
+        "weeds": [
+            {
+                "class": "braquiaria",
+                "common_name": "Brachiaria / Capim-braquiária",
+                "confidence": 0.92,
+                "severity": "high",
+                "area_m2": 125.5,
+                "coverage_percent": 18.5,
+                "description": "Widespread braquiaria infestation competing with crop"
+            }
+        ],
+        "pests": [],
+        "diseases": []
+    },
+    "pests": {
+        "crop_health": {
+            "status": "diseased",
+            "confidence": 0.89,
+            "ndvi": 0.48,
+            "description": "Crop showing disease symptoms from pest damage"
+        },
+        "weeds": [],
+        "pests": [
+            {
+                "class": "spodoptera_frugiperda",
+                "common_name": "Lagarta-do-cartucho / Fall armyworm",
+                "confidence": 0.91,
+                "severity": "critical",
+                "infestation_level": "high",
+                "estimated_damage_percent": 25
+            }
+        ],
+        "diseases": [
+            {
+                "class": "ferrugem_sugarcane",
+                "common_name": "Ferrugem / Sugarcane rust",
+                "confidence": 0.85,
+                "severity": "medium",
+                "affected_area_m2": 45.0,
+                "symptoms": ["orange_pustules", "leaf_yellowing"]
+            }
+        ]
+    }
+}
+
+
+@app.post("/api/v1/vision/analyze")
+async def analyze_mock(
+    file: Optional[UploadFile] = File(None),
+    field_id: str = Query("F001", description="Field identifier"),
+    zone_id: str = Query("Z001", description="Zone identifier"),
+    scenario: str = Query("healthy", description="Mock scenario: healthy, weeds, pests")
+):
+    """
+    Mock vision analysis endpoint for integration testing.
+    
+    Use 'scenario' parameter to control output:
+    - healthy: Optimal crop health, no issues
+    - weeds: High weed infestation
+    - pests: Heavy pest infestation + disease
+    """
+    scenario_data = MOCK_SCENARIOS.get(scenario, MOCK_SCENARIOS["healthy"])
+    
+    analysis_id = f"VIS-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
+    
+    # Construct recommendations based on detections
+    recommendations = []
+    if scenario_data.get("weeds"):
+        recommendations.append({
+            "action": "apply_herbicide",
+            "priority": "high",
+            "reason": "High-severity weed infestation detected"
+        })
+    if scenario_data.get("pests"):
+        recommendations.append({
+            "action": "apply_pesticide",
+            "priority": "critical",
+            "reason": "Heavy pest infestation requires immediate control"
+        })
+    if scenario_data.get("diseases"):
+        recommendations.append({
+            "action": "apply_fungicide",
+            "priority": "high",
+            "reason": "Disease detected, prevent spread"
+        })
+    
+    if not recommendations:
+        recommendations.append({
+            "action": "continue_monitoring",
+            "priority": "low",
+            "reason": "Crop health is optimal"
+        })
+    
+    response = {
+        "analysis_id": analysis_id,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "source": {
+            "device_id": "DRONE-V123",
+            "device_type": "drone"
+        },
+        "location": {
+            "field_id": field_id,
+            "zone_id": zone_id
+        },
+        "detections": scenario_data,
+        "recommendations": recommendations
+    }
+    
+    return response
 
 
 if __name__ == "__main__":
