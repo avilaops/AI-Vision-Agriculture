@@ -1,217 +1,252 @@
-﻿# AI Vision Agriculture
-### Inteligência Artificial que Vê o Que Você Não Vê no Campo
+﻿# AI-Vision-Agriculture
 
-> **"Colha no momento certo. Sempre."**
+Computer vision API for sugarcane maturity analysis, pest detection, and disease detection. Part of the AvilaOps agricultural technology ecosystem.
+
+## 🎯 Overview
+
+This service provides a REST API for analyzing sugarcane field images, returning:
+- **Maturity analysis**: Classification level, confidence score, estimated ATR/POL/Brix
+- **Pest detection**: Identification of common sugarcane pests with bounding boxes
+- **Disease detection**: Detection of diseases with severity assessment
+
+**Current Status**: Placeholder implementation with mock results. ML model training will be added in Phase 2.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- pip
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/avilaops/AI-Vision-Agriculture.git
+cd AI-Vision-Agriculture
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Running the API Server
+
+```bash
+# Start the FastAPI server
+uvicorn src.api:app --reload
+
+# Server will start at http://localhost:8000
+# Interactive API docs at http://localhost:8000/docs
+```
+
+### Testing the API
+
+```bash
+# Run the example script
+python examples/analyze_image.py
+
+# Or use curl
+curl -X POST "http://localhost:8000/analyze" \
+  -F "image=@test_image.jpg" \
+  -F "image_id=img_001.jpg" \
+  -F "lat=-21.1234" \
+  -F "lon=-47.5678" \
+  -F "altitude=580.0"
+```
+
+## 📡 API Endpoints
+
+### `POST /analyze`
+
+Analyze a sugarcane field image.
+
+**Request:**
+- `image`: Image file (JPEG or PNG, 224x224 to 4096x4096 pixels, max 10MB)
+- `image_id`: Unique identifier for the image
+- `lat`: Latitude in decimal degrees (Brazil: -34 to -1)
+- `lon`: Longitude in decimal degrees (Brazil: -74 to -32)
+- `altitude`: Altitude in meters (optional)
+- `timestamp`: ISO 8601 timestamp (optional, defaults to current time)
+
+**Response:**
+
+```json
+{
+  "image_id": "img_20260220_103000.jpg",
+  "gps": {
+    "lat": -21.1234,
+    "lon": -47.5678,
+    "altitude": 580.0
+  },
+  "timestamp": "2026-02-20T10:30:00Z",
+  "maturity": {
+    "level": "ready_to_harvest",
+    "confidence": 0.85,
+    "estimated_atr": 14.2,
+    "estimated_pol": 16.8,
+    "estimated_brix": 18.5
+  },
+  "pests": [],
+  "diseases": [],
+  "processing_time_ms": 124.5,
+  "model_version": "placeholder-v0.1"
+}
+```
+
+### `GET /health`
+
+Health check endpoint.
+
+**Response:**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-02-20T10:30:00Z",
+  "analyzer": {
+    "model_version": "placeholder-v0.1",
+    "model_type": "placeholder",
+    "capabilities": ["maturity_analysis", "pest_detection", "disease_detection"],
+    "status": "initialized"
+  }
+}
+```
+
+### `GET /model-info`
+
+Get information about the loaded ML model.
+
+### `GET /docs`
+
+Interactive API documentation (Swagger UI).
+
+## 🔧 Development
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install pytest pytest-cov
+
+# Run tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+```
+
+### Project Structure
+
+```
+AI-Vision-Agriculture/
+├── src/
+│   ├── __init__.py          # Package exports
+│   ├── api.py               # FastAPI application
+│   ├── models.py            # Pydantic data models
+│   └── analyzer.py          # Image analysis logic (placeholder)
+├── tests/
+│   └── test_analyzer.py     # Unit tests
+├── examples/
+│   └── analyze_image.py     # Example usage script
+├── docs/
+│   └── (OpenAPI spec auto-generated at /docs)
+├── requirements.txt         # Python dependencies
+└── README.md               # This file
+```
+
+## 📊 Data Contract
+
+### Maturity Levels
+
+- `immature`: Not ready for harvest (ATR < 12 kg/ton)
+- `early_maturity`: Early maturity (ATR 12-13 kg/ton)
+- `ready_to_harvest`: Optimal harvest time (ATR 13-16 kg/ton)
+- `late_harvest`: Late harvest window (ATR 13-15 kg/ton)
+- `overripe`: Past optimal harvest (ATR declining)
+
+### Pest Types (Examples)
+
+- `sugarcane_borer`: Diatraea saccharalis
+- `spittlebug`: Mahanarva fimbriolata
+- `white_grub`: Migdolus fryanus
+- `aphid`: Melanaphis sacchari
+
+### Disease Types (Examples)
+
+- `red_rot`: Colletotrichum falcatum
+- `smut`: Sporisorium scitamineum
+- `rust`: Puccinia melanocephala
+- `mosaic_virus`: Sugarcane Mosaic Virus (SCMV)
+
+## 🔗 Integration
+
+This service integrates with:
+
+- **CanaSwarm-Intelligence**: Provides real-time field analysis for fleet coordination
+- **Precision-Agriculture-Platform**: Enriches harvest data with maturity predictions
+- **AgriBot-Retrofit**: Processes images from autonomous robot cameras
+
+### Example Integration (Python)
+
+```python
+import requests
+from datetime import datetime
+
+def analyze_field_image(image_path: str, lat: float, lon: float):
+    with open(image_path, 'rb') as f:
+        response = requests.post(
+            'http://localhost:8000/analyze',
+            data={
+                'image_id': 'field_001.jpg',
+                'lat': lat,
+                'lon': lon,
+                'timestamp': datetime.utcnow().isoformat() + 'Z',
+            },
+            files={'image': f}
+        )
+    return response.json()
+
+# Usage
+results = analyze_field_image('sugarcane_field.jpg', -21.1234, -47.5678)
+print(f"Maturity: {results['maturity']['level']}")
+print(f"Estimated ATR: {results['maturity']['estimated_atr']} kg/ton")
+```
+
+## 🚧 Roadmap
+
+### Phase 1 (Current) - Infrastructure
+- [x] API skeleton with FastAPI
+- [x] Data contract definition (Pydantic models)
+- [x] Placeholder analyzer with mock results
+- [x] OpenAPI documentation
+- [x] Integration examples
+
+### Phase 2 - ML Model Development (Q2 2026)
+- [ ] Dataset collection and labeling
+- [ ] Model training (CNN for maturity, YOLO for pests/diseases)
+- [ ] Model evaluation and calibration
+- [ ] Model deployment
+
+### Phase 3 - Production (Q3 2026)
+- [ ] Model versioning and A/B testing
+- [ ] Performance optimization
+- [ ] Batch processing support
+- [ ] Cloud deployment (AWS/Azure)
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+## 🤝 Contributing
+
+Part of the AvilaOps agro-tech ecosystem. For contribution guidelines, see the main repository.
+
+## 📧 Contact
+
+- **Organization**: AvilaOps
+- **Repository**: https://github.com/avilaops/AI-Vision-Agriculture
+- **Issue Tracking**: GitHub Issues
 
 ---
 
-## 💼 O Problema
-
-Decisões sobre **quando colher** custam milhões:
-
-### O Custo da Incerteza:
-- **15-20%** de perda de valor por colheita prematura (ATR baixo)
-- **10-15%** de perda por colheita tardia (invasão de pragas, tombamento)
-- **R$ 1,5-3 milhões/ano** perdidos (usina 5.000 ha)
-- **Inspeção manual** cara, lenta e imprecisa
-- **Decisões baseadas em amostragem** (0,1% da área)
-
-### Resultado:
-Você colhe **sem ter certeza** se é o melhor momento.
-
----
-
-## ✅ Nossa Solução
-
-**AI Vision Agriculture** usa **visão computacional** para analisar 100% da lavoura e dizer:
-- ✅ Qual talhão está maduro AGORA
-- ✅ Qual vai estar pronto em 7-15 dias
-- ✅ Onde tem problemas (pragas, deficiência, estresse)
-
-### Como Funciona:
-1. **Câmeras/drones** capturam imagens da lavoura
-2. **IA analisa** em segundos (maturidade, saúde, produtividade estimada)  
-3. **Sistema gera** mapa de prioridades de colheita
-4. **Você colhe** o que está no ponto ideal
-
-### Diferencial:
-Não é amostragem. É **análise de 100% da área** em tempo real.
-
----
-
-## 💰 Retorno Financeiro
-
-### Benefícios Diretos (5.000 ha):
-
-| Ganho | Valor Anual |
-|-------|-------------|
-| Colheita no ponto ideal (+12% ATR) | R$ 1,2-1,8 milhão |
-| Redução de perdas | R$ 400-600 mil |
-| Otimização de logística | R$ 200-350 mil |
-| Detecção precoce de pragas | R$ 150-250 mil |
-| **TOTAL** | **R$ 1,95-3 milhões** |
-
-### Investimento:
-- **Setup inicial**: R$ 80-150 mil (câmeras + sistema)  
-- **Operacional**: R$ 15-25 mil/mês
-- **ROI**: 1-2 meses
-
----
-
-## 🎯 Funcionalidades
-
-### 1️⃣ Detecção de Maturidade
-**O que faz:**
-- Analisa índice de maturação visual
-- Estima ATR por área
-- Prevê janela ideal de colheita
-- Gera mapa de prioridades
-
-**Resultado:** Colha sempre no pico de rentabilidade
-
----
-
-### 2️⃣ Detecção de Pragas e Doenças
-**O que faz:**
-- Identifica 30+ tipos de pragas/doenças
-- Alerta precoce (antes de sintomas visíveis)
-- Localização precisa do foco
-- Estimativa de dano econômico
-
-**Resultado:** Tratamento preventivo economiza 60-80%
-
----
-
-### 3️⃣ Estimativa de Produtividade
-**O que faz:**
-- Conta plantas/espigas/frutos automaticamente
-- Estima produtividade 30 dias antes da colheita  
-- Comparativo com anos anteriores
-- Projeção de receita
-
-**Resultado:** Planejamento logístico e comercial preciso
-
----
-
-### 4️⃣ Monitoramento de Saúde da Lavoura
-**O que faz:**
-- Índices de vegetação (NDVI, NDRE)
-- Estresse hídrico
-- Deficiências nutricionais
-- Evolução temporal
-
-**Resultado:** Intervenções rápidas evitam perdas
-
----
-
-### 5️⃣ Dashboard Executivo
-**O que faz:**
-- Mapa interativo com status de cada talhão
-- Alertas automáticos de anomalias
-- Relatórios de ação recomendada
-- Histórico completo
-
-**Resultado:** Decisões em minutos, não dias
-
----
-
-## 🗓️ Roadmap de Implementação
-
-### **FASE 1: Setup (Semana 1-2)**
-- Instalação de câmeras/drones
-- Configuração da IA
-- Treinamento do modelo (suas culturas)
-- **Investimento:** R$ 60-100 mil
-
----
-
-### **FASE 2: Operação Assistida (Mês 1-2)**
-- Coleta automática de imagens
-- Primeiras análises
-- Validação em campo
-- **Resultado:** Sistema calibrado
-
----
-
-### **FASE 3: Autonomia (Mês 3+)**
-- Análise 100% automatizada
-- Alertas em tempo real
-- Expansão para novas áreas
-- **Resultado:** ROI positivo
-
----
-
-## 📊 Casos de Uso
-
-### **Usina 6.000 ha - Cana (SP)**
-**Problema:** Colheita atrasada causava perda de 8-12% no ATR
-
-**Solução:** AI Vision implantado, análise semanal
-
-**Resultado (1 ano):**
-- ✅ Aumento de 11% no ATR médio
-- ✅ Economia de R$ 2,1 milhões
-- ✅ Redução de 30% em retrabalho
-
----
-
-### **Produtor 2.500 ha - Soja (MT)**
-**Problema:** Ferrugem asiática detectada tarde, prejuízo alto
-
-**Solução:** Monitoramento com IA (detecção precoce)
-
-**Resultado (2 safras):**
-- ✅ Detecção 15 dias mais cedo
-- ✅ Economia de R$ 380 mil em defensivos
-- ✅ Zero perda por doença
-
----
-
-## 💡 Diferenciais
-
-### ✅ Análise 100% da Área
-Não é amostragem. É cobertura completa.
-
-### ✅ Tempo Real
-Resultados em minutos após captura das imagens.
-
-### ✅ Multi-Culturas
-Cana, soja, milho, café, citros, algodão...
-
-### ✅ Integração
-Funciona com drones, satélites, robôs, tratores.
-
----
-
-## 📦 Planos
-
-### **Essencial** - Até 2.000 ha
-R$ 15-22 mil/mês
-- Análise de maturidade
-- Dashboard básico
-- Suporte email
-
-### **Completo** - 2.000-10.000 ha
-R$ 35-55 mil/mês
-- Tudo do Essencial +
-- Detecção de pragas
-- Estimativa de produtividade
-- Consultoria agronômica
-
-### **Enterprise** - +10.000 ha
-Sob consulta
-- Solução customizada
-- Equipe dedicada
-- Múltiplas culturas
-
----
-
-## 📞 Contato
-
-**Comercial:** vendas@aivision-agro.com.br  
-**Suporte:** suporte@aivision-agro.com.br  
-**WhatsApp:** +55 (XX) XXXXX-XXXX
-
----
-
-**AI Vision Agriculture** - *Veja o Invisível, Lucre Mais* 👁️🌱 
+**Note**: This is a placeholder implementation. The current version returns mock results for testing integration. ML model training will be added in Phase 2. 
